@@ -1,4 +1,3 @@
-
 def get_regions(service):
     import boto3
     s = boto3.Session()

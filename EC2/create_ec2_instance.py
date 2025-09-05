@@ -19,11 +19,13 @@ import os
 import platform
 import sys
 import argparse
+from images.image_methods import get_region_images
 
 parser = argparse.ArgumentParser(description="Define Variables..")
 parser.add_argument("--user_region", nargs='?', type=str, help="The Region You want to create the EC2 Instance in")
-parser.add_argument("--image-id", nargs='?', type=str, help="The Image ID you want to use to create the EC2 Instance")
-parser.add_argument("--instance-type", nargs='?', type=str, help="The EC2 Instance Type")
+parser.add_argument("--image_id", nargs='?', type=str, help="The Image ID you want to use to create the EC2 Instance")
+parser.add_argument("--image_owner", nargs='?', type=str, help="The Image Owner, EG self, amazon, public")
+parser.add_argument("--instance_type", nargs='?', type=str, help="The EC2 Instance Type")
 args = parser.parse_args()
 
 osVersion = platform.system()
@@ -37,25 +39,69 @@ file_path = file_path[:len(file_path)-2]
 file_path = seperator.join(file_path)
 sys.path.insert(1, file_path)
 
-from regions.get_regions import get_regions
+from regions.region_methods import get_regions
 
 availble_regions = get_regions("ec2")
 print("User supplied region:", args.user_region)
+print("User supplied image_id:", args.image_id)
+print("User supplied image_owner:", args.image_owner)
+print("User supplied instance_type:", args.instance_type)
 
 if {args.user_region} != {None}:
-    user_region = {args.user_region}
+    user_region = list({args.user_region})[0]
+    if user_region not in availble_regions:
+        error = "The region provided is not vaild, please re-run the script with one of the following regions\n"
+        error += "User Provided Region: " + str(user_region)
+        error += "Availble regions:\n"
+        for i in availble_regions:
+            error += i + "\n"
+        sys.exit(error)
 else:
     user_region = input('Please Enter Which Region You Would Like to Create a EC2 Instance in?\n')
+    while True:
+        if user_region.lower() in availble_regions:
+            break
+        else:
+            print('The provided region is not valid, please enter a valid region from the list below...')
+            for i in availble_regions:
+                print(i)
+            user_region = input('Please Enter Which Region You Would Like to Create a EC2 Instance in?\n')
+            continue
 
-while True:
-    if user_region.lower() in availble_regions:
-        break
-    else:
-        print('The provided region is not valid, please enter a valid region from the list below...')
-        for i in availble_regions:
-            print(i)
-        user_region = input('Please Enter Which Region You Would Like to Create a EC2 Instance in?\n')
-        continue
+if {args.image_owner} != {None}:
+    image_owner = {args.image_owner}
+else:
+    image_owner = "amazon"
+
+availble_images = get_region_images(user_region,image_owner)
+image_names = [n['Name'] for n in availble_images] 
+image_ids = [id['ImageId'] for id in availble_images] 
+
+if {args.image_id} == {None}:
+    print('Please Enter Which EC2 Image You Would Like to use from the following..')
+    for i in image_names:
+        print(i)
+    image_name = input('Please Enter an Image Name to Create the EC2 Instance...\n')
+    while True:
+        if image_name in image_names:
+            break
+        else:
+            print('The provided image name is not valid, please enter a valid image name from the list below...')
+            for i in image_names:
+                print(i)
+            image_name = input('Please Enter an Image Name to Create the EC2 Instance...\n')
+            continue
+    image_id = [item for item in availble_images if item["Name"] ==  image_name][0]["ImageId"]
+else:
+    image_id = list({args.image_id})[0]
+    if image_id not in image_ids:
+        error = "The Image Id provided is not vaild, or not valid for the given region please re-run the script with one of the following Image Ids\n"
+        error += "User Provided image_id:" + str(image_id)
+        error += "Availble imageids:\n"
+        for i in image_ids:
+            error += i + "\n"
+        sys.exit(error)
+
 
 '''
 s = boto3.Session(region_name="us-east-1")
