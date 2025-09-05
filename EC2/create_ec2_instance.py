@@ -14,7 +14,7 @@ script can also be run by providing variables as input
 
 '''
 
-#import boto3
+import boto3
 import os
 import platform
 import sys
@@ -102,16 +102,13 @@ else:
             error += i + "\n"
         sys.exit(error)
 
-
-'''
-s = boto3.Session(region_name="us-east-1")
+s = boto3.Session(region_name=user_region)
 ec2 = s.resource('ec2')
 
 instance = ec2.create_instances(
-    ImageId='ami-00ca32bbc84273381',
+    ImageId=image_id,
     MinCount=1,
     MaxCount=1,
-    InstanceType='t2.micro',
+    InstanceType='t3.micro',
 )
 print(instance[0].id)
-'''
